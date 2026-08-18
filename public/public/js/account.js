@@ -1,5 +1,26 @@
 const API_URL = 'https://moser-server.onrender.com';
 
+function t(err) {
+    const map = {
+        'Login min 3 characters': 'Логин минимум 3 символа',
+        'Password min 6 characters': 'Пароль минимум 6 символов',
+        'HWID required': 'HWID обязателен',
+        'Login already taken': 'Логин уже занят',
+        'Registration failed': 'Ошибка регистрации',
+        'All fields required': 'Заполни все поля',
+        'Invalid login or password': 'Неверный логин или пароль',
+        'Account bound to another device': 'Аккаунт привязан к другому устройству',
+        'token and hwid required': 'token и hwid обязательны',
+        'Invalid token': 'Невалидный токен',
+        'HWID mismatch': 'HWID не совпадает',
+        'Key and HWID required': 'Ключ и HWID обязательны',
+        'Invalid or used key': 'Неверный или использованный ключ',
+        'plan and count required': 'plan и count обязательны',
+        'File not found': 'Файл не найден'
+    };
+    return map[err] || err;
+}
+
 const plans = {
     month: {
         name: '1 МЕСЯЦ',
@@ -238,7 +259,7 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             });
             const data = await res.json();
             if (data.error) {
-                errorEl.textContent = data.error;
+                errorEl.textContent = t(data.error);
                 return;
             }
             if (data.token) {
@@ -258,7 +279,7 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
                 });
             }
         } catch (err) {
-            errorEl.textContent = 'Ошибка соединения с сервером';
+            errorEl.textContent = t('Invalid login or password');
             console.error(err);
         }
     } else {
@@ -279,7 +300,7 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             });
             const data = await res.json();
             if (data.error) {
-                errorEl.textContent = data.error;
+                errorEl.textContent = t(data.error);
                 return;
             }
             if (data.token) {
@@ -299,7 +320,7 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
                 });
             }
         } catch (err) {
-            errorEl.textContent = 'Ошибка соединения с сервером';
+            errorEl.textContent = 'Сервер недоступен';
             console.error(err);
         }
     }
@@ -341,7 +362,7 @@ document.getElementById('keyForm').addEventListener('submit', async function(e) 
         });
         const data = await res.json();
         if (data.error) {
-            resultEl.textContent = data.error;
+            resultEl.textContent = t(data.error);
             resultEl.className = 'key-result error';
             return;
         }
@@ -369,7 +390,7 @@ document.getElementById('keyForm').addEventListener('submit', async function(e) 
         resultEl.className = 'key-result success';
         document.getElementById('licenseKey').value = '';
     } catch (err) {
-        resultEl.textContent = 'Ошибка соединения с сервером';
+        resultEl.textContent = 'Сервер недоступен';
         resultEl.className = 'key-result error';
         console.error(err);
     }
@@ -549,7 +570,7 @@ document.getElementById('adminGenForm')?.addEventListener('submit', async functi
         });
         const data = await res.json();
         if (data.error) {
-            resultEl.textContent = data.error;
+            resultEl.textContent = t(data.error);
             resultEl.style.color = '#ef4444';
             return;
         }
