@@ -1,4 +1,4 @@
-const API_URL = 'https://moser-server.onrender.com';
+﻿const API_URL = 'https://moser-server.onrender.com';
 
 function t(err) {
     if (!err) return 'Неизвестная ошибка';
