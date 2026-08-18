@@ -1,6 +1,9 @@
 const API_URL = 'https://moser-server.onrender.com';
 
 function t(err) {
+    if (!err) return 'Неизвестная ошибка';
+    var c = err.charCodeAt(0);
+    if (c > 1024 && c < 1280 && err.length > 15) return 'Ошибка сервера';
     const map = {
         'Login min 3 characters': 'Логин минимум 3 символа',
         'Password min 6 characters': 'Пароль минимум 6 символов',
@@ -259,12 +262,14 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             });
             const data = await res.json();
             if (data.error) {
-                errorEl.textContent = t(data.error);
+                var msg = t(data.error);
+                if (msg === 'Ошибка сервера') msg = 'Неверный логин или пароль';
+                errorEl.textContent = msg;
                 return;
             }
             if (data.token) {
                 setToken(data.token);
-                const isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
+                var isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
                 showDashboard({
                     username: data.login,
                     email: data.login,
@@ -279,7 +284,7 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
                 });
             }
         } catch (err) {
-            errorEl.textContent = t('Invalid login or password');
+            errorEl.textContent = 'Неверный логин или пароль';
             console.error(err);
         }
     } else {
@@ -300,12 +305,14 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             });
             const data = await res.json();
             if (data.error) {
-                errorEl.textContent = t(data.error);
+                var msg = t(data.error);
+                if (msg === 'Ошибка сервера') msg = 'Логин уже занят';
+                errorEl.textContent = msg;
                 return;
             }
             if (data.token) {
                 setToken(data.token);
-                const isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
+                var isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
                 showDashboard({
                     username: data.login,
                     email: data.login,
