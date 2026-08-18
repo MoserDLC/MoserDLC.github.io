@@ -1,5 +1,29 @@
 const API_URL = 'https://moser-server.onrender.com';
 
+function t(err) {
+    if (!err) return 'Неизвестная ошибка';
+    var c = err.charCodeAt(0);
+    if (c > 1024 && c < 1280 && err.length > 15) return 'Ошибка сервера';
+    const map = {
+        'Login min 3 characters': 'Логин минимум 3 символа',
+        'Password min 6 characters': 'Пароль минимум 6 символов',
+        'HWID required': 'HWID обязателен',
+        'Login already taken': 'Логин уже занят',
+        'Registration failed': 'Ошибка регистрации',
+        'All fields required': 'Заполни все поля',
+        'Invalid login or password': 'Неверный логин или пароль',
+        'Account bound to another device': 'Аккаунт привязан к другому устройству',
+        'token and hwid required': 'token и hwid обязательны',
+        'Invalid token': 'Невалидный токен',
+        'HWID mismatch': 'HWID не совпадает',
+        'Key and HWID required': 'Ключ и HWID обязательны',
+        'Invalid or used key': 'Неверный или использованный ключ',
+        'plan and count required': 'plan и count обязательны',
+        'File not found': 'Файл не найден'
+    };
+    return map[err] || err;
+}
+
 const plans = {
     month: {
         name: '1 МЕСЯЦ',
@@ -94,9 +118,22 @@ function showDashboard(user) {
         if (img) img.remove();
     }
 
+    const isAdmin = (user.role === 'admin' || (user.login && user.login.toLowerCase() === 'moserdlc'));
+    const adminSidebarItem = document.getElementById('adminSidebarItem');
+    if (adminSidebarItem) {
+        adminSidebarItem.style.display = isAdmin ? 'flex' : 'none';
+    }
+
+    let roleText = 'Пользователь';
+    if (isAdmin) {
+        roleText = 'Администратор';
+    } else if (user.plan && user.plan !== 'free') {
+        roleText = 'Премиум';
+    }
+
     // Fill details
     document.getElementById('detailUid').textContent = user.uid || '—';
-    document.getElementById('detailRole').textContent = user.role || (user.plan && user.plan !== 'free' ? 'Премиум' : 'Пользователь');
+    document.getElementById('detailRole').textContent = roleText;
     document.getElementById('detailLogin').textContent = user.login || user.username;
     document.getElementById('detailEmail').textContent = user.email || user.login;
     document.getElementById('detailDate').textContent = user.regDate || '—';
@@ -163,6 +200,7 @@ function checkSession() {
         .then(res => res.json())
         .then(data => {
             if (data.valid) {
+                const isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
                 showDashboard({
                     username: data.login,
                     email: data.login,
@@ -171,7 +209,7 @@ function checkSession() {
                     planExpiry: data.expires ? new Date(data.expires).getTime() : null,
                     expires: data.expires,
                     uid: '—',
-                    role: data.plan && data.plan !== 'free' ? 'Премиум' : 'Пользователь',
+                    role: isAdmin ? 'admin' : (data.plan && data.plan !== 'free' ? 'Премиум' : 'Пользователь'),
                     regDate: '—',
                     hwid: hwid
                 });
@@ -224,11 +262,14 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             });
             const data = await res.json();
             if (data.error) {
-                errorEl.textContent = data.error;
+                var msg = t(data.error);
+                if (msg === 'Ошибка сервера') msg = 'Неверный логин или пароль';
+                errorEl.textContent = msg;
                 return;
             }
             if (data.token) {
                 setToken(data.token);
+                var isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
                 showDashboard({
                     username: data.login,
                     email: data.login,
@@ -237,13 +278,13 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
                     planExpiry: data.expires ? new Date(data.expires).getTime() : null,
                     expires: data.expires,
                     uid: '—',
-                    role: data.plan && data.plan !== 'free' ? 'Премиум' : 'Пользователь',
+                    role: isAdmin ? 'admin' : (data.plan && data.plan !== 'free' ? 'Премиум' : 'Пользователь'),
                     regDate: '—',
                     hwid: hwid
                 });
             }
         } catch (err) {
-            errorEl.textContent = 'Ошибка соединения с сервером';
+            errorEl.textContent = 'Неверный логин или пароль';
             console.error(err);
         }
     } else {
@@ -264,11 +305,14 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             });
             const data = await res.json();
             if (data.error) {
-                errorEl.textContent = data.error;
+                var msg = t(data.error);
+                if (msg === 'Ошибка сервера') msg = 'Логин уже занят';
+                errorEl.textContent = msg;
                 return;
             }
             if (data.token) {
                 setToken(data.token);
+                var isAdmin = (data.role === 'admin' || (data.login && data.login.toLowerCase() === 'moserdlc'));
                 showDashboard({
                     username: data.login,
                     email: data.login,
@@ -277,13 +321,13 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
                     planExpiry: data.expires ? new Date(data.expires).getTime() : null,
                     expires: data.expires,
                     uid: '—',
-                    role: 'Пользователь',
+                    role: isAdmin ? 'admin' : 'Пользователь',
                     regDate: formatRegDate(),
                     hwid: hwid
                 });
             }
         } catch (err) {
-            errorEl.textContent = 'Ошибка соединения с сервером';
+            errorEl.textContent = 'Сервер недоступен';
             console.error(err);
         }
     }
@@ -325,7 +369,7 @@ document.getElementById('keyForm').addEventListener('submit', async function(e) 
         });
         const data = await res.json();
         if (data.error) {
-            resultEl.textContent = data.error;
+            resultEl.textContent = t(data.error);
             resultEl.className = 'key-result error';
             return;
         }
@@ -353,7 +397,7 @@ document.getElementById('keyForm').addEventListener('submit', async function(e) 
         resultEl.className = 'key-result success';
         document.getElementById('licenseKey').value = '';
     } catch (err) {
-        resultEl.textContent = 'Ошибка соединения с сервером';
+        resultEl.textContent = 'Сервер недоступен';
         resultEl.className = 'key-result error';
         console.error(err);
     }
@@ -450,5 +494,110 @@ document.querySelectorAll('.sidebar-item').forEach(function(item) {
         document.querySelectorAll('.dashboard-tab').forEach(function(t) { t.classList.remove('active'); });
         var target = document.getElementById('tab-' + tab);
         if (target) target.classList.add('active');
+
+        if (tab === 'admin') {
+            loadAdminUsers();
+            loadAdminKeys();
+        }
     });
+});
+
+async function loadAdminUsers() {
+    const tbody = document.getElementById('adminUsersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-secondary);">Загрузка...</td></tr>';
+    try {
+        const res = await fetch(`${API_URL}/api/admin/users`);
+        const data = await res.json();
+        if (data.users && data.users.length > 0) {
+            tbody.innerHTML = data.users.map(u => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px 16px;">${u.id}</td>
+                    <td style="padding: 12px 16px; font-weight: 600;">${u.login}</td>
+                    <td style="padding: 12px 16px;"><span style="color: ${u.role === 'admin' || u.login.toLowerCase() === 'moserdlc' ? 'var(--accent)' : 'var(--text-primary)'};">${u.role || (u.login.toLowerCase() === 'moserdlc' ? 'admin' : 'user')}</span></td>
+                    <td style="padding: 12px 16px;">${u.plan || 'free'}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-size: 11px;">${u.hwid || '—'}</td>
+                    <td style="padding: 12px 16px; color: var(--text-secondary);">${u.created || '—'}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-secondary);">Нет пользователей</td></tr>';
+        }
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #ef4444;">Ошибка загрузки</td></tr>';
+        console.error(err);
+    }
+}
+
+async function loadAdminKeys() {
+    const tbody = document.getElementById('adminKeysTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-secondary);">Загрузка...</td></tr>';
+    try {
+        const res = await fetch(`${API_URL}/api/admin/keys`);
+        const data = await res.json();
+        if (data.keys && data.keys.length > 0) {
+            tbody.innerHTML = data.keys.map(k => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px 16px;">${k.id}</td>
+                    <td style="padding: 12px 16px; font-family: monospace; font-weight: 600;">${k.key_code}</td>
+                    <td style="padding: 12px 16px;">${k.plan}</td>
+                    <td style="padding: 12px 16px;"><span style="color: ${k.used ? 'var(--green)' : 'var(--text-secondary)'}">${k.used ? 'Да' : 'Нет'}</span></td>
+                    <td style="padding: 12px 16px;">${k.user_id || '—'}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-secondary);">Нет ключей</td></tr>';
+        }
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">Ошибка загрузки</td></tr>';
+        console.error(err);
+    }
+}
+
+document.getElementById('adminRefreshUsers')?.addEventListener('click', loadAdminUsers);
+document.getElementById('adminRefreshKeys')?.addEventListener('click', loadAdminKeys);
+
+document.getElementById('adminGenForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const plan = document.getElementById('adminGenPlan').value;
+    const count = parseInt(document.getElementById('adminGenCount').value, 10) || 1;
+    const resultEl = document.getElementById('adminGenResult');
+    const genKeysSection = document.getElementById('adminGeneratedKeysSection');
+    const genKeysList = document.getElementById('adminGeneratedKeysList');
+
+    resultEl.textContent = 'Генерация...';
+    resultEl.style.color = 'var(--text-secondary)';
+
+    try {
+        const res = await fetch(`${API_URL}/api/admin/keys/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan, count })
+        });
+        const data = await res.json();
+        if (data.error) {
+            resultEl.textContent = t(data.error);
+            resultEl.style.color = '#ef4444';
+            return;
+        }
+        if (data.keys) {
+            resultEl.textContent = `Успешно сгенерировано ключей: ${data.keys.length}`;
+            resultEl.style.color = 'var(--green)';
+
+            genKeysSection.style.display = 'block';
+            genKeysList.innerHTML = data.keys.map(key => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <span style="font-family: monospace; font-size: 13px; font-weight: 600;">${key}</span>
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="navigator.clipboard.writeText('${key}'); this.textContent='Скопировано!'; setTimeout(() => this.textContent='Копировать', 1500);">Копировать</button>
+                </div>
+            `).join('');
+
+            loadAdminKeys();
+        }
+    } catch (err) {
+        resultEl.textContent = 'Ошибка соединения';
+        resultEl.style.color = '#ef4444';
+        console.error(err);
+    }
 });
