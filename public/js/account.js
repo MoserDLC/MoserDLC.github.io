@@ -269,22 +269,19 @@ document.getElementById('authForm').addEventListener('submit', async function(e)
             if (data.error) {
                 var msg = t(data.error);
                 if (msg === '\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0430') msg = '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u043b\u043e\u0433\u0438\u043d \u0438\u043b\u0438 \u043f\u0430\u0440\u043e\u043b\u044c';
-                errorEl.textContent = msg;
-                if (data.error === 'Invalid login or password') {
-                    errorEl.textContent = '\u041f\u043e\u043f\u044b\u0442\u043a\u0430 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u0438...';
-                    try {
-                        var regRes = await fetch(API_URL + '/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login: loginInput, password: password, hwid: hwid }) });
-                        var regData = await regRes.json();
-                        if (regData.token) {
-                            saveCreds(loginInput, password);
-                            setToken(regData.token);
-                            handleAuthData(regData, hwid);
-                            errorEl.textContent = '';
-                            return;
-                        }
-                        errorEl.textContent = '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u043b\u043e\u0433\u0438\u043d \u0438\u043b\u0438 \u043f\u0430\u0440\u043e\u043b\u044c';
-                    } catch (re) { errorEl.textContent = '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u043b\u043e\u0433\u0438\u043d \u0438\u043b\u0438 \u043f\u0430\u0440\u043e\u043b\u044c'; }
-                }
+                errorEl.textContent = '\u041f\u043e\u043f\u044b\u0442\u043a\u0430 \u0432\u0445\u043e\u0434\u0430...';
+                try {
+                    var regRes = await fetch(API_URL + '/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login: loginInput, password: password, hwid: hwid }) });
+                    var regData = await regRes.json();
+                    if (regData.token) {
+                        saveCreds(loginInput, password);
+                        setToken(regData.token);
+                        handleAuthData(regData, hwid);
+                        errorEl.textContent = '';
+                        return;
+                    }
+                    errorEl.textContent = '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u043b\u043e\u0433\u0438\u043d \u0438\u043b\u0438 \u043f\u0430\u0440\u043e\u043b\u044c';
+                } catch (re) { errorEl.textContent = '\u041d\u0435\u0432\u0435\u0440\u043d\u044b\u0439 \u043b\u043e\u0433\u0438\u043d \u0438\u043b\u0438 \u043f\u0430\u0440\u043e\u043b\u044c'; }
                 return;
             }
             if (data.token) {
